@@ -501,7 +501,7 @@ Hooks::Hooks() noexcept
         VirtualProtect(memory.dispatchSound, 4, oldProtection, nullptr);
     }
 
-    interfaces.gameUI->messageBox("UwU Yes Daddy!", "RyDeem Osiris Loaded!!!");
+    interfaces.gameUI->messageBox("Welcome to OSU!!!", "Loki's Sceptor Loaded!!!");
 }
 
 void Hooks::restore() noexcept
