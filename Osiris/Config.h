@@ -80,6 +80,8 @@ public:
         bool ignoreSmoke{ false };
         bool recoilBasedFov{ false };
         int timeLimit{ 200 };
+        bool pingBased{ 0 };
+        bool drawAllTicks{ false };
     } backtrack;
 
     struct {
@@ -153,6 +155,11 @@ public:
     struct {
         bool disablePostProcessing{ false };
         bool inverseRagdollGravity{ false };
+        int inverseRagdollGravityValue{ -600 };
+        bool inverseRagdollGravityCustomize{ false };
+        bool ragdollTimescaleEnable{ false };
+        bool ragdollTimescaleCustomize{ false };
+        float ragdollTimescale{ 1.0f };
         bool noFog{ false };
         bool no3dSky{ false };
         bool noAimPunch{ false };
@@ -187,7 +194,23 @@ public:
         float hitMarkerTime{ 0.6f };
         int playerModelT{ 0 };
         int playerModelCT{ 0 };
-
+        bool customViewmodelToggle{ false };
+        float viewmodel_x{ 0 };
+        float viewmodel_y{ 0 };
+        float viewmodel_z{ 0 };
+        bool customViewmodelKnifeToggle{ false };
+        bool customViewmodelKnifeOut{ false };
+        bool customViewmodelKnifeEnabled{ false };
+        bool customViewmodelMenuSwitch{ false };
+        bool customViewmodelMenuCustomize{ false };
+        bool customViewmodelBombEquiped{ false };
+        bool customViewmodelSwitchHand{ false };
+        bool customViewmodelSwitchHandKnife{ false };
+        float viewmodel_x_knife{ 0 };
+        float viewmodel_y_knife{ 0 };
+        float viewmodel_z_knife{ 0 };
+        bool view_bob{ false };
+        bool fullBright{ false };
         struct {
             bool enabled = false;
             float blue = 0.0f;
@@ -235,6 +258,8 @@ public:
         int edgejumpkey{ 0 };
         bool slowwalk{ false };
         int slowwalkKey{ 0 };
+        bool fastwalk{ false };
+        int fastwalkKey{ 0 };
         bool sniperCrosshair{ false };
         bool recoilCrosshair{ false };
         bool autoPistol{ false };
@@ -260,6 +285,7 @@ public:
         std::string banText{ "Cheater has been permanently banned from official CS:GO servers." };
         bool fastPlant{ false };
         ColorToggle bombTimer{ 1.0f, 0.55f, 0.0f };
+        bool bombDamage{ false };
         bool quickReload{ false };
         bool prepareRevolver{ false };
         int prepareRevolverKey{ 0 };

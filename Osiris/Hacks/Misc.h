@@ -15,7 +15,7 @@ namespace Misc
 {
     void edgejump(UserCmd* cmd) noexcept;
     void slowwalk(UserCmd* cmd) noexcept;
-    void inverseRagdollGravity() noexcept;
+    void fastwalk(UserCmd* cmd) noexcept;
     void updateClanTag(bool = false) noexcept;
     void spectatorList() noexcept;
     void sniperCrosshair() noexcept;
@@ -36,6 +36,7 @@ namespace Misc
     void fixTabletSignal() noexcept;
     void fakePrime() noexcept;
     void killMessage(GameEvent& event) noexcept;
+    void drawBombDamage() noexcept;
 
     constexpr void fixMovement(UserCmd* cmd, float yaw) noexcept
     {

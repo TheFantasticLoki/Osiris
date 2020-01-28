@@ -139,7 +139,11 @@ static bool __stdcall createMove(float inputSampleTime, UserCmd* cmd) noexcept
     Misc::quickHealthshot(cmd);
     Misc::fixTabletSignal();
     Misc::slowwalk(cmd);
+    Misc::fastwalk(cmd);
     Misc::edgejump(cmd);
+    Visuals::fullBright();
+    Visuals::viewBob();
+    Visuals::physicsTimescale();
 
     if (!(cmd->buttons & (UserCmd::IN_ATTACK | UserCmd::IN_ATTACK2))) {
         Misc::chokePackets(sendPacket);
@@ -172,7 +176,7 @@ static int __stdcall doPostScreenEffects(int param) noexcept
     if (interfaces.engine->isInGame()) {
         Visuals::modifySmoke();
         Visuals::thirdperson();
-        Misc::inverseRagdollGravity();
+        Visuals::inverseRagdollGravity();
         Visuals::disablePostProcessing();
         Visuals::reduceFlashEffect();
         Visuals::removeBlur();
@@ -180,6 +184,7 @@ static int __stdcall doPostScreenEffects(int param) noexcept
         Visuals::removeGrass();
         Visuals::remove3dSky();
         Glow::render();
+        Visuals::customViewmodelPosition();
     }
     return hooks.clientMode.callOriginal<int, int>(44, param);
 }
@@ -224,8 +229,9 @@ static void __stdcall paintTraverse(unsigned int panel, bool forceRepaint, bool 
         Esp::render();
         Misc::drawBombTimer();
         Misc::spectatorList();
-        Misc::watermark();        
-        Visuals::hitMarker();
+        Misc::watermark();
+		Visuals::hitMarker();
+        Misc::drawBombDamage();
     }
     hooks.panel.callOriginal<void, unsigned int, bool, bool>(41, panel, forceRepaint, allowForce);
 }
@@ -495,7 +501,7 @@ Hooks::Hooks() noexcept
         VirtualProtect(memory.dispatchSound, 4, oldProtection, nullptr);
     }
 
-    interfaces.gameUI->messageBox("This was a triumph!", "Osiris has been successfully loaded.");
+    interfaces.gameUI->messageBox("UwU Yes Daddy!", "RyDeem Osiris Loaded!!!");
 }
 
 void Hooks::restore() noexcept

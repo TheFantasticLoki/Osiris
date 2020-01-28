@@ -86,6 +86,8 @@ void Config::load(size_t id) noexcept
         if (backtrackJson.isMember("Ignore smoke")) backtrack.ignoreSmoke = backtrackJson["Ignore smoke"].asBool();
         if (backtrackJson.isMember("Recoil based fov")) backtrack.recoilBasedFov = backtrackJson["Recoil based fov"].asBool();
         if (backtrackJson.isMember("Time limit")) backtrack.timeLimit = backtrackJson["Time limit"].asInt();
+        if (backtrackJson.isMember("Ping Based")) backtrack.pingBased = backtrackJson["Ping Based"].asBool();
+        if (backtrackJson.isMember("Draw all ticks")) backtrack.drawAllTicks = backtrackJson["Draw all ticks"].asBool();
     }
 
     {
@@ -648,6 +650,11 @@ void Config::load(size_t id) noexcept
         if (visualsJson.isMember("disablePostProcessing")) visuals.disablePostProcessing = visualsJson["disablePostProcessing"].asBool();
         if (visualsJson.isMember("inverseRagdollGravity")) visuals.inverseRagdollGravity = visualsJson["inverseRagdollGravity"].asBool();
         if (visualsJson.isMember("noFog")) visuals.noFog = visualsJson["noFog"].asBool();
+        if (visualsJson.isMember("inverseRagdollGravityValue")) visuals.inverseRagdollGravityValue = visualsJson["inverseRagdollGravityValue"].asInt();
+        if (visualsJson.isMember("inverseRagdollGravityCustomize")) visuals.inverseRagdollGravityCustomize = visualsJson["inverseRagdollGravityCustomize"].asBool();
+        if (visualsJson.isMember("ragdollTimescale")) visuals.ragdollTimescale = visualsJson["ragdollTimescale"].asFloat();
+        if (visualsJson.isMember("ragdollTimescaleEnable")) visuals.ragdollTimescaleEnable = visualsJson["ragdollTimescaleEnable"].asBool();
+        if (visualsJson.isMember("ragdollTimescaleCustomize")) visuals.ragdollTimescaleCustomize = visualsJson["ragdollTimescaleCustomize"].asBool();
         if (visualsJson.isMember("no3dSky")) visuals.no3dSky = visualsJson["no3dSky"].asBool();
         if (visualsJson.isMember("No aim punch")) visuals.noAimPunch = visualsJson["No aim punch"].asBool();
         if (visualsJson.isMember("No view punch")) visuals.noViewPunch = visualsJson["No view punch"].asBool();
@@ -705,7 +712,6 @@ void Config::load(size_t id) noexcept
         if (visualsJson.isMember("Hit marker time")) visuals.hitMarkerTime = visualsJson["Hit marker time"].asFloat();
         if (visualsJson.isMember("Playermodel T")) visuals.playerModelT = visualsJson["Playermodel T"].asInt();
         if (visualsJson.isMember("Playermodel CT")) visuals.playerModelCT = visualsJson["Playermodel CT"].asInt();
-
         if (visualsJson.isMember("Color correction")) {
             const auto& cc = visualsJson["Color correction"];
 
@@ -718,6 +724,21 @@ void Config::load(size_t id) noexcept
             if (cc.isMember("Green")) visuals.colorCorrection.green = cc["Green"].asFloat();
             if (cc.isMember("Yellow")) visuals.colorCorrection.yellow = cc["Yellow"].asFloat();
         }
+        if (visualsJson.isMember("Custom Viewmodel Toggle")) visuals.customViewmodelToggle = visualsJson["Custom Viewmodel Toggle"].asBool();
+        if (visualsJson.isMember("Custom Viewmodel Menu Switch")) visuals.customViewmodelMenuSwitch = visualsJson["Custom Viewmodel Menu Switch"].asBool();
+        if (visualsJson.isMember("Custom Viewmodel Menu Customize")) visuals.customViewmodelMenuCustomize = visualsJson["Custom Viewmodel Menu Customize"].asBool();
+        if (visualsJson.isMember("Custom Viewmodel X")) visuals.viewmodel_x = visualsJson["Custom Viewmodel X"].asFloat();
+        if (visualsJson.isMember("Custom Viewmodel Y")) visuals.viewmodel_y = visualsJson["Custom Viewmodel Y"].asFloat();
+        if (visualsJson.isMember("Custom Viewmodel Z")) visuals.viewmodel_z = visualsJson["Custom Viewmodel Z"].asFloat();
+        if (visualsJson.isMember("Custom Viewmodel X Knife")) visuals.viewmodel_x_knife = visualsJson["Custom Viewmodel X Knife"].asFloat();
+        if (visualsJson.isMember("Custom Viewmodel Y Knife")) visuals.viewmodel_y_knife = visualsJson["Custom Viewmodel Y Knife"].asFloat();
+        if (visualsJson.isMember("Custom Viewmodel Z Knife")) visuals.viewmodel_z_knife = visualsJson["Custom Viewmodel Z Knife"].asFloat();
+        if (visualsJson.isMember("Custom Viewmodel Knife Toggle")) visuals.customViewmodelKnifeToggle = visualsJson["Custom Viewmodel Knife Toggle"].asBool();
+        if (visualsJson.isMember("Custom Viewmodel Knife Enabled")) visuals.customViewmodelKnifeEnabled = visualsJson["Custom Viewmodel Knife Enabled"].asBool();
+        if (visualsJson.isMember("Custom Viewmodel Switch Hand")) visuals.customViewmodelSwitchHand = visualsJson["Custom Viewmodel Switch Hand"].asBool();
+        if (visualsJson.isMember("Custom Viewmodel Switch Hand Knife")) visuals.customViewmodelSwitchHandKnife = visualsJson["Custom Viewmodel Switch Hand Knife"].asBool();
+        if (visualsJson.isMember("Custom Viewmodel Bob")) visuals.view_bob = visualsJson["Custom Viewmodel Bob"].asBool();
+        if (visualsJson.isMember("Full Brightness Light")) visuals.fullBright = visualsJson["Full Brightness Light"].asBool();
     }
 
     for (size_t i = 0; i < skinChanger.size(); i++) {
@@ -811,6 +832,8 @@ void Config::load(size_t id) noexcept
         if (miscJson.isMember("Edge Jump Key")) misc.edgejumpkey = miscJson["Edge Jump Key"].asInt();
         if (miscJson.isMember("Slowwalk")) misc.slowwalk = miscJson["Slowwalk"].asBool();
         if (miscJson.isMember("Slowwalk key")) misc.slowwalkKey = miscJson["Slowwalk key"].asInt();
+        if (miscJson.isMember("Fastwalk")) misc.fastwalk = miscJson["Fastwalk"].asBool();
+        if (miscJson.isMember("Fastwalk key")) misc.fastwalkKey = miscJson["Fastwalk key"].asInt();
         if (miscJson.isMember("Sniper crosshair")) misc.sniperCrosshair = miscJson["Sniper crosshair"].asBool();
         if (miscJson.isMember("Recoil crosshair")) misc.recoilCrosshair = miscJson["Recoil crosshair"].asBool();
         if (miscJson.isMember("Auto pistol")) misc.autoPistol = miscJson["Auto pistol"].asBool();
@@ -883,6 +906,7 @@ void Config::load(size_t id) noexcept
                 misc.bombTimer.rainbowSpeed = rainbowSpeed.asFloat();
         }
 
+        if (miscJson.isMember("Bomb Damage Indicator")) misc.bombDamage = miscJson["Bomb Damage Indicator"].asBool();
         if (miscJson.isMember("Quick reload")) misc.quickReload = miscJson["Quick reload"].asBool();
         if (miscJson.isMember("Prepare revolver")) misc.prepareRevolver = miscJson["Prepare revolver"].asBool();
         if (miscJson.isMember("Prepare revolver key")) misc.prepareRevolverKey = miscJson["Prepare revolver key"].asInt();
@@ -968,6 +992,8 @@ void Config::save(size_t id) const noexcept
         backtrackJson["Ignore smoke"] = backtrack.ignoreSmoke;
         backtrackJson["Recoil based fov"] = backtrack.recoilBasedFov;
         backtrackJson["Time limit"] = backtrack.timeLimit;
+        backtrackJson["Draw all ticks"] = backtrack.drawAllTicks;
+        backtrackJson["Ping Based"] = backtrack.pingBased;
     }
 
     {
@@ -1418,6 +1444,11 @@ void Config::save(size_t id) const noexcept
         visualsJson["disablePostProcessing"] = visuals.disablePostProcessing;
         visualsJson["inverseRagdollGravity"] = visuals.inverseRagdollGravity;
         visualsJson["noFog"] = visuals.noFog;
+        visualsJson["inverseRagdollGravityValue"] = visuals.inverseRagdollGravityValue;
+        visualsJson["inverseRagdollGravityCustomize"] = visuals.inverseRagdollGravityCustomize;
+        visualsJson["ragdollTimescale"] = visuals.ragdollTimescale;
+        visualsJson["ragdollTimescaleEnable"] = visuals.ragdollTimescaleEnable;
+        visualsJson["ragdollTimescaleCustomize"] = visuals.ragdollTimescaleCustomize;
         visualsJson["no3dSky"] = visuals.no3dSky;
         visualsJson["No aim punch"] = visuals.noAimPunch;
         visualsJson["No view punch"] = visuals.noViewPunch;
@@ -1482,6 +1513,22 @@ void Config::save(size_t id) const noexcept
             cc["Green"] = visuals.colorCorrection.green;
             cc["Yellow"] = visuals.colorCorrection.yellow;
         }
+		visualsJson["Custom Viewmodel Toggle"] = visuals.customViewmodelToggle;
+		visualsJson["Custom Viewmodel X"] = visuals.viewmodel_x;
+		visualsJson["Custom Viewmodel Y"] = visuals.viewmodel_y;
+		visualsJson["Custom Viewmodel Z"] = visuals.viewmodel_z;
+		visualsJson["Custom Viewmodel Knife Toggle"] = visuals.customViewmodelKnifeToggle;
+		visualsJson["Custom Viewmodel Knife Enabled"] = visuals.customViewmodelKnifeEnabled;
+		visualsJson["Custom Viewmodel Knife Switch"] = visuals.customViewmodelMenuSwitch;
+		visualsJson["Custom Viewmodel Switch Hand"] = visuals.customViewmodelSwitchHand;
+		visualsJson["Custom Viewmodel Switch Hand Knife"] = visuals.customViewmodelSwitchHandKnife;
+		visualsJson["Custom Viewmodel Menu Switch"] = visuals.customViewmodelMenuSwitch;
+		visualsJson["Custom Viewmodel Menu Customize"] = visuals.customViewmodelMenuCustomize;
+		visualsJson["Custom Viewmodel X Knife"] = visuals.viewmodel_x_knife;
+		visualsJson["Custom Viewmodel Y Knife"] = visuals.viewmodel_y_knife;
+		visualsJson["Custom Viewmodel Z Knife"] = visuals.viewmodel_z_knife;
+		visualsJson["Custom Viewmodel Bob"] = visuals.view_bob;
+		visualsJson["Full Brightness Light"] = visuals.fullBright;
     }
 
     for (size_t i = 0; i < skinChanger.size(); i++) {
@@ -1566,6 +1613,8 @@ void Config::save(size_t id) const noexcept
         miscJson["Edge Jump Key"] = misc.edgejumpkey;
         miscJson["Slowwalk"] = misc.slowwalk;
         miscJson["Slowwalk key"] = misc.slowwalkKey;
+        miscJson["Fastwalk"] = misc.fastwalk;
+        miscJson["Fastwalk key"] = misc.fastwalkKey;
         miscJson["Sniper crosshair"] = misc.sniperCrosshair;
         miscJson["Recoil crosshair"] = misc.recoilCrosshair;
         miscJson["Auto pistol"] = misc.autoPistol;
@@ -1620,6 +1669,7 @@ void Config::save(size_t id) const noexcept
             bombTimerJson["Rainbow speed"] = misc.bombTimer.rainbowSpeed;
         }
 
+        miscJson["Bomb Damage Indicator"] = misc.bombDamage;
         miscJson["Quick reload"] = misc.quickReload;
         miscJson["Prepare revolver"] = misc.prepareRevolver;
         miscJson["Prepare revolver key"] = misc.prepareRevolverKey;

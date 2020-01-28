@@ -1,4 +1,4 @@
-﻿#include <sstream>
+#include <sstream>
 
 #include "../Config.h"
 #include "../Interfaces.h"
@@ -66,10 +66,37 @@ void Misc::slowwalk(UserCmd* cmd) noexcept
     }
 }
 
-void Misc::inverseRagdollGravity() noexcept
+void Misc::fastwalk(UserCmd* cmd) noexcept
 {
-    static auto ragdollGravity = interfaces.cvar->findVar("cl_ragdoll_gravity");
-    ragdollGravity->setValue(config.visuals.inverseRagdollGravity ? -600 : 600);
+    if (!config.misc.fastwalk || !GetAsyncKeyState(config.misc.fastwalkKey))
+        return;
+
+    const auto localPlayer = interfaces.entityList->getEntity(interfaces.engine->getLocalPlayer());
+
+    if (!localPlayer || !localPlayer->isAlive())
+        return;
+
+    const auto activeWeapon = localPlayer->getActiveWeapon();
+    if (!activeWeapon)
+        return;
+
+    const auto weaponData = activeWeapon->getWeaponData();
+    if (!weaponData)
+        return;
+
+    const float maxSpeed = 134;
+
+    if (cmd->forwardmove && cmd->sidemove) {
+        const float maxSpeedRoot = maxSpeed * static_cast<float>(M_SQRT1_2);
+        cmd->forwardmove = cmd->forwardmove < 0.0f ? -maxSpeedRoot : maxSpeedRoot;
+        cmd->sidemove = cmd->sidemove < 0.0f ? -maxSpeedRoot : maxSpeedRoot;
+    }
+    else if (cmd->forwardmove) {
+        cmd->forwardmove = cmd->forwardmove < 0.0f ? -maxSpeed : maxSpeed;
+    }
+    else if (cmd->sidemove) {
+        cmd->sidemove = cmd->sidemove < 0.0f ? -maxSpeed : maxSpeed;
+    }
 }
 
 void Misc::updateClanTag(bool tagChanged) noexcept
@@ -105,10 +132,13 @@ void Misc::updateClanTag(bool tagChanged) noexcept
 void Misc::spectatorList() noexcept
 {
     if (config.misc.spectatorList.enabled && interfaces.engine->isInGame()) {
-        const auto localPlayer = interfaces.entityList->getEntity(interfaces.engine->getLocalPlayer());
+        auto localPlayer = interfaces.entityList->getEntity(interfaces.engine->getLocalPlayer());
 
-        if (!localPlayer->isAlive())
-            return;
+        if (!localPlayer->isAlive()){
+            if (!localPlayer->getObserverTarget())
+                return;
+            localPlayer = localPlayer->getObserverTarget();
+        }
 
         interfaces.surface->setTextFont(Surface::font);
 
@@ -505,4 +535,65 @@ void Misc::killMessage(GameEvent& event) noexcept
     cmd += config.misc.killMessageString;
     cmd += "\"";
     interfaces.engine->clientCmdUnrestricted(cmd.c_str());
+}
+
+void Misc::drawBombDamage() noexcept
+{
+    const auto localPlayer = interfaces.entityList->getEntity(interfaces.engine->getLocalPlayer());
+
+    //No Alive return since it is useful if you want to call it out to a mate that he will die
+    if (!localPlayer || !config.misc.bombDamage)
+        return;
+    if (localPlayer->health() < 1)
+        return;
+
+    for (int i = interfaces.engine->getMaxClients(); i <= interfaces.entityList->getHighestEntityIndex(); i++)
+    {
+        auto entity = interfaces.entityList->getEntity(i);
+        if (!entity || entity->isDormant() || entity->getClientClass()->classId != ClassId::PlantedC4 || !entity->
+            c4Ticking())
+            continue;
+
+        auto vecBombDistance = entity->origin() - localPlayer->origin();
+
+        const auto d = (vecBombDistance.length() - 75.68f) / 789.2f;
+        auto flDamage = 450.7f * exp(-d * d);
+
+        const auto ArmorValue = localPlayer->armor();
+        if (ArmorValue > 0)
+        {
+            auto flNew = flDamage * 0.5f;
+            auto flArmor = (flDamage - flNew) * 0.5f;
+
+            if (flArmor > static_cast<float>(ArmorValue))
+            {
+                flArmor = static_cast<float>(ArmorValue) * (1.f / 0.5f);
+                flNew = flDamage - flArmor;
+            }
+
+            flDamage = flNew;
+        }
+
+        const int bombDamage = max(ceilf(flDamage), 0);
+
+        //Could get the specator target here as well and set the color based on the spaceted player
+        //I'm too lazy for that tho, green while you are dead just looks nicer
+        if (localPlayer->isAlive() && bombDamage >= localPlayer->health())
+            interfaces.surface->setTextColor(255, 0, 0);
+        else
+            interfaces.surface->setTextColor(0, 255, 0);
+
+        auto bombDmgText{ (std::wstringstream{} << L"Health Left: " << localPlayer->health() - bombDamage).str() };
+
+        constexpr unsigned font{ 0xc1 };
+        interfaces.surface->setTextFont(font);
+
+        auto drawPositionY{ interfaces.surface->getScreenSize().second / 8 };
+        const auto bombDmgX{ interfaces.surface->getScreenSize().first / 2 - static_cast<int>((interfaces.surface->getTextSize(font, bombDmgText.c_str())).first / 2) };
+
+        drawPositionY -= interfaces.surface->getTextSize(font, bombDmgText.c_str()).second;
+
+        interfaces.surface->setTextPosition(bombDmgX, drawPositionY);
+        interfaces.surface->printText(bombDmgText.c_str());
+    }
 }

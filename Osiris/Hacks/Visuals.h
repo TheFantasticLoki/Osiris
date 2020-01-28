@@ -11,7 +11,13 @@
 enum class FrameStage;
 class GameEvent;
 
+struct HitMarkerInfo {
+	float hitMarkerExpTime;
+	int hitMarkerDmg;
+};
+
 namespace Visuals {
+    void inverseRagdollGravity() noexcept;
     void playerModel(FrameStage stage) noexcept;
     void colorWorld() noexcept;
     void modifySmoke() noexcept;
@@ -26,6 +32,10 @@ namespace Visuals {
     void applyScreenEffects() noexcept;
     void hitEffect(GameEvent* = nullptr) noexcept;
     void hitMarker(GameEvent* = nullptr) noexcept;
+    void customViewmodelPosition() noexcept;
+    void fullBright() noexcept;
+    void viewBob() noexcept;
+    void physicsTimescale() noexcept;
 
     constexpr void disablePostProcessing() noexcept
     {

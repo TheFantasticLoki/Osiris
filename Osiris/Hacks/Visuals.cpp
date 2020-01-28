@@ -12,8 +12,62 @@
 #include "../SDK/RenderContext.h"
 #include "../SDK/Surface.h"
 #include "../SDK/ModelInfo.h"
-
+#include "../SDK/Surface.h"
 #include <array>
+
+void Visuals::customViewmodelPosition() noexcept {
+
+    static ConVar* view_x = interfaces.cvar->findVar("viewmodel_offset_x");
+    static ConVar* view_y = interfaces.cvar->findVar("viewmodel_offset_y");
+    static ConVar* view_z = interfaces.cvar->findVar("viewmodel_offset_z");
+    static ConVar* sv_minspec = interfaces.cvar->findVar("sv_competitive_minspec");
+    static ConVar* cl_rightHand = interfaces.cvar->findVar("cl_righthand");
+    *(int*)((DWORD)& sv_minspec->onChangeCallbacks + 0xC) = 0;
+    const auto localPlayer = interfaces.entityList->getEntity(interfaces.engine->getLocalPlayer());
+    bool KnifeOut = 0; bool BombOut = 0; bool DualPistolsOut = 0;
+    if (config.visuals.customViewmodelToggle) {
+        if (!localPlayer)return;
+        if (const auto localPlayer = interfaces.entityList->getEntity(interfaces.engine->getLocalPlayer())) {
+            sv_minspec->setValue(0);
+            if (const auto activeWeapon = localPlayer->getActiveWeapon(); activeWeapon && activeWeapon->getClientClass()->classId == ClassId::C4) { BombOut = 1; cl_rightHand->setValue(1); view_x->setValue(0); view_y->setValue(0); view_z->setValue(0); }
+            else { BombOut = 0; };
+            if (const auto activeWeapon = localPlayer->getActiveWeapon(); activeWeapon && activeWeapon->getClientClass()->classId == ClassId::Knife) { KnifeOut = 1; view_x->setValue(config.visuals.viewmodel_x_knife); view_y->setValue(config.visuals.viewmodel_y_knife); view_z->setValue(config.visuals.viewmodel_z_knife); if (!config.visuals.customViewmodelSwitchHandKnife) { cl_rightHand->setValue(1); } else { cl_rightHand->setValue(0); } }
+            else { KnifeOut = 0; };
+            if (const auto activeWeapon = localPlayer->getActiveWeapon(); activeWeapon && activeWeapon->getClientClass()->classId == ClassId::Elite) { DualPistolsOut = 1; view_x->setValue(0.118f); view_y->setValue(config.visuals.viewmodel_y); view_z->setValue(config.visuals.viewmodel_z); if (!config.visuals.customViewmodelSwitchHand) { cl_rightHand->setValue(1); } else { cl_rightHand->setValue(0); } }
+            else { DualPistolsOut = 0; };
+            if (!BombOut && !KnifeOut && !DualPistolsOut) { view_x->setValue(config.visuals.viewmodel_x); view_y->setValue(config.visuals.viewmodel_y); view_z->setValue(config.visuals.viewmodel_z); if (!config.visuals.customViewmodelSwitchHand) { cl_rightHand->setValue(1); } else { cl_rightHand->setValue(0); } }
+        }
+        else { sv_minspec->setValue(1); cl_rightHand->setValue(1); view_x->setValue(0); view_y->setValue(0); view_z->setValue(0); }
+    }
+}
+
+void Visuals::physicsTimescale() noexcept {
+    const auto localPlayer = interfaces.entityList->getEntity(interfaces.engine->getLocalPlayer());
+    if (!localPlayer)
+        return;
+    static auto physicsTimescale = interfaces.cvar->findVar("cl_phys_timescale");
+    physicsTimescale->setValue(config.visuals.ragdollTimescaleEnable ? config.visuals.ragdollTimescale : 1);
+}
+
+void Visuals::viewBob() noexcept {
+    static auto localPlayer = interfaces.entityList->getEntity(interfaces.engine->getLocalPlayer());
+    if (!localPlayer)
+        return;
+        interfaces.cvar->findVar("cl_use_new_headbob")->setValue(config.visuals.view_bob ? 0 : 1);
+    }
+
+void Visuals::fullBright() noexcept {
+    static auto localPlayer = interfaces.entityList->getEntity(interfaces.engine->getLocalPlayer());
+    if (!localPlayer)
+        return;
+    interfaces.cvar->findVar("mat_fullbright")->setValue(config.visuals.fullBright ? 1 : 0);
+}
+
+void Visuals::inverseRagdollGravity() noexcept
+{
+    static auto ragdollGravity = interfaces.cvar->findVar("cl_ragdoll_gravity");
+    ragdollGravity->setValue(config.visuals.inverseRagdollGravity ? config.visuals.inverseRagdollGravityValue : 600);
+}
 
 void Visuals::playerModel(FrameStage stage) noexcept
 {
@@ -80,7 +134,7 @@ void Visuals::colorWorld() noexcept
         return;
 
     if (config.visuals.world.enabled)
-        static auto _ = (interfaces.cvar->findVar("r_drawspecificstaticprop")->setValue(0), interfaces.cvar->findVar("cl_brushfastpath")->setValue(0), true);
+        static auto _ = (interfaces.cvar->findVar("r_drawspecificstaticprop")->setValue(0), true);
 
     for (short h = interfaces.materialSystem->firstMaterial(); h != interfaces.materialSystem->invalidMaterial(); h = interfaces.materialSystem->nextMaterial(h)) {
         const auto mat = interfaces.materialSystem->getMaterial(h);
@@ -327,14 +381,20 @@ void Visuals::hitMarker(GameEvent* event) noexcept
     if (lastHitTime + config.visuals.hitMarkerTime < memory.globalVars->realtime)
         return;
 
+    const auto [width, height] = interfaces.surface->getScreenSize();
+    const auto width_mid = width / 2;
+    const auto height_mid = height / 2;
+
     switch (config.visuals.hitMarker) {
     case 1:
-        const auto [width, height] = interfaces.surface->getScreenSize();
-
-        const auto width_mid = width / 2;
-        const auto height_mid = height / 2;
-
         interfaces.surface->setDrawColor(255, 255, 255, 255);
+        interfaces.surface->drawLine(width_mid + 10, height_mid + 10, width_mid + 4, height_mid + 4);
+        interfaces.surface->drawLine(width_mid - 10, height_mid + 10, width_mid - 4, height_mid + 4);
+        interfaces.surface->drawLine(width_mid + 10, height_mid - 10, width_mid + 4, height_mid - 4);
+        interfaces.surface->drawLine(width_mid - 10, height_mid - 10, width_mid - 4, height_mid - 4);
+        break;
+    case 2:
+        interfaces.surface->setDrawColor(255, 0, 255, 255);
         interfaces.surface->drawLine(width_mid + 10, height_mid + 10, width_mid + 4, height_mid + 4);
         interfaces.surface->drawLine(width_mid - 10, height_mid + 10, width_mid - 4, height_mid + 4);
         interfaces.surface->drawLine(width_mid + 10, height_mid - 10, width_mid + 4, height_mid - 4);
