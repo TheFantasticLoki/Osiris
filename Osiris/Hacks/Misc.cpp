@@ -53,7 +53,7 @@ void Misc::slowwalk(UserCmd* cmd) noexcept
     if (!weaponData)
         return;
 
-    const float maxSpeed = (localPlayer->isScoped() ? weaponData->maxSpeedAlt : weaponData->maxSpeed) / 3;
+    const float maxSpeed = 65;
 
     if (cmd->forwardmove && cmd->sidemove) {
         const float maxSpeedRoot = maxSpeed * static_cast<float>(M_SQRT1_2);
