@@ -1,62 +1,12 @@
-# Osiris [![C++](https://img.shields.io/badge/language-C%2B%2B-%23f34b7d.svg)](https://en.wikipedia.org/wiki/C%2B%2B) [![CS:GO](https://img.shields.io/badge/game-CS%3AGO-yellow.svg)](https://store.steampowered.com/app/730/CounterStrike_Global_Offensive/) [![Windows](https://img.shields.io/badge/platform-Windows-0078d7.svg)](https://en.wikipedia.org/wiki/Microsoft_Windows) [![x86](https://img.shields.io/badge/arch-x86-red.svg)](https://en.wikipedia.org/wiki/X86) [![License](https://img.shields.io/github/license/danielkrupinski/Osiris.svg)](LICENSE) ![](https://img.shields.io/github/issues/danielkrupinski/Osiris.svg)
-Added by Loki:
-
--Fastwalk | not fully working yet
-
--Autostrafe Key courtesy of Simonsmh
-
--EnginePrediction Courtesy of notgoodusename
-
-Added by ry:
-
--Ping Based Backtrack
-
--Draw all backtrack cham ticks
-
--Fullbright Light//setting mat_fullbright to 1
-
--Ragdoll Gravity custom value changer
-
--Ragdoll Physics time scale (faster or slower moving body through time/air)//cl_phys_timescale
-
--Added remove weapon sway when moving/running option.//cl_use_new_headbob
-
--Viewmodel Move XYZ for weapons and knife independently(sv_minspec->setValue(1); is needed for more then 2.5 each xyz direction, now up to a max of 20.)
-
--cl_righthand in menu when selecting viewmodel for weapons and knife independent(if you quit out of the game not disabling viewmodel position cl_righthand will stay what it was on last exit cheat controlled BUG)
-
--default (0.0.0) location for bomb equip viewmodel forced. (works 95% of the time)
-
--Hitmarker Damage numbers animation from chrosshair with menu settings integration.
-
--spec list on players you are spectating added
-
--Config save/load integration for all of the above.
-
-////////////////////////////////////////////////////////////////////////
-if (config.human.reader) > (config.emotion.interested)=extended description{
-
--Pingbased backtrack is what it says on the tin, it makes the backtrack lenght match your ingame ping to server in ms. If you disable pingbased you can see the ping value in backtrack tick ms slider on the gui. Basically takes similar code like on the fps/ping watermark.
-
--Fullbright light = forces mat_fullbright 1 and disables brightness slider, as in my test it did nothing with fullbright on, change the world color for much crisper light now, and see chams better on no shadows and light changes in the enviroment.
-
--Gravity value changer = customize the gravity abount you get with the flip gravity gui button,
-do -600(default or -2400 for fast moving flying upwards ragdolls. Want them to suck to the ground when they die instantly? do 2400.
-
--Added a gui interface thats not perfect onto ZerGo0'ds code for changing the hitmarker damage settings, would be better if i understood how he calls for movement direction in the code. not gud coder eh,? yas :/
-
--And i moved around things in the visuals window, hope people arent mad about that, i had to put my new GUI poppup sliders for gravity changer, viewmodel xyz and hitmarker at the bottom for max nice effect xd
-
--Added ragdoll Physics timescale float input window for when selecting the option in visuals, default is 1.0 and you can set it to 0.5 for half as fast ragdoll animation/physics or 2x for faster, onr anything inbetween. Goes up from 0.0x to 10x.
-
-};
-//////////
-
-Thank you coders!
-#835 By ZerGo0 // Hitmarker Damage Indicator
-#894 By agshaidun // Spec List on other players
-#730 By JDeu // Draw All Backtrack Tick Chams
-#584 By effex1337 // View Model Offset XYZ
+# Osiris 
+[![C++](https://img.shields.io/badge/language-C%2B%2B-%23f34b7d.svg?style=plastic)](https://en.wikipedia.org/wiki/C%2B%2B) 
+[![CS:GO](https://img.shields.io/badge/game-CS%3AGO-yellow.svg?style=plastic)](https://store.steampowered.com/app/730/CounterStrike_Global_Offensive/) 
+[![Windows](https://img.shields.io/badge/platform-Windows-0078d7.svg?style=plastic)](https://en.wikipedia.org/wiki/Microsoft_Windows) 
+[![x86](https://img.shields.io/badge/arch-x86-red.svg?style=plastic)](https://en.wikipedia.org/wiki/X86) 
+[![License](https://img.shields.io/github/license/danielkrupinski/Osiris.svg?style=plastic)](LICENSE)
+[![Issues](https://img.shields.io/github/issues/danielkrupinski/Osiris.svg?style=plastic)](https://github.com/danielkrupinski/Osiris/issues)
+[![PayPal](https://img.shields.io/badge/donate-PayPal-104098.svg?style=plastic&logo=PayPal)](https://paypal.me/DanielK19)
+![Windows](https://github.com/danielkrupinski/Osiris/workflows/Windows/badge.svg?branch=master&event=push)
 
 Free open-source training software / cheat for **Counter-Strike: Global Offensive** game. Designed as internal cheat - [Dynamic-link library](https://en.wikipedia.org/wiki/Dynamic-link_library) (DLL) loadable into game process. Compatible with the latest version of the game on Steam.
 
@@ -88,12 +38,9 @@ Free open-source training software / cheat for **Counter-Strike: Global Offensiv
     * **Ignore smoke** - ignore smoke i.e. aim when target is in smoke
     * **Auto shot** - shoot automatically when target found
     * **Auto scope** - automatically scopes sniper rifle before shooting
-    * **Recoil-based fov** - aimbot uses recoil as fov origin
     * **Bone** - bone which aimbot aims at
     * **Fov** - field-of-view which aimbot operates [*0*-*255*]
     * **Smooth** - smooth aimbot movement in order to seem more human-like
-    * **Recoil control x** - horizontal recoil control factor
-    * **Recoil control y** - vertical recoil control factor
     * **Max aim inaccuracy** - maximum weapon inaccuracy allowing aimbot to run, lowering this value will e.g. disable aimbot while jumping or running
 
 * **Triggerbot** - automatically fires when crosshair is on enemy
@@ -129,7 +76,7 @@ Free open-source training software / cheat for **Counter-Strike: Global Offensiv
     * **Health based** - color is based on player's hp
     * **Rainbow** - change color frequently
     * **Blinking** - change transparency frequently
-    * **Material** - material applied to model (*Normal, Flat, Animated, Platinum,Glass, Chrome, Crystal, Silver, Gold, Plastic*)
+    * **Material** - material applied to model (*Normal, Flat, Animated, Platinum,Glass, Chrome, Crystal, Silver, Gold, Plastic, Glow*)
     * **Wireframe** - render triangle mesh instead of solid material
     * **Alpha** - maximum material transparency
 
@@ -292,7 +239,7 @@ If your CPU supports AVX / AVX2 instruction set, you can enable it in project se
 ## FAQ
 
 ### How do I open menu?
-Press `INSERT` key while focused on CS:GO window.
+Press <kbd>INSERT</kbd> while focused on CS:GO window.
 
 ### Where is my config file saved?
 Configuration files are saved inside `Osiris` folder in your `Documents` folder (`%USERPROFILE%\Documents\Osiris`). The config is in human readable format and can be edited (e.g, using notepad). Sometimes after updates configuration file needs to be deleted and recreated.

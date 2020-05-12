@@ -1,44 +1,46 @@
-#include "../SDK/GlobalVars.h"
-#include "../SDK/UserCmd.h"
-#include "EnginePrediction.h"
-#include "../SDK/Prediction.h"
 #include "../Interfaces.h"
-#include "../SDK/PseudoMd5.h"
+#include "../Memory.h"
 
-static float m_flOldCurtime;
-static float m_flOldFrametime;
-MoveData m_MoveData;
+#include "../SDK/Engine.h"
+#include "../SDK/Entity.h"
+#include "../SDK/EntityList.h"
+#include "../SDK/GameMovement.h"
+#include "../SDK/GlobalVars.h"
+#include "../SDK/MoveHelper.h"
+#include "../SDK/Prediction.h"
 
-void PredictionSys::RunEnginePred(UserCmd* cmd) noexcept
+#include "EnginePrediction.h"
+
+static int localPlayerFlags;
+
+void EnginePrediction::run(UserCmd* cmd) noexcept
 {
-    const auto localPlayer = interfaces.entityList->getEntity(interfaces.engine->getLocalPlayer());
+    if (!localPlayer)
+        return;
+    
+    localPlayerFlags = localPlayer->flags();
 
-    *memory.predictionRandomSeed = MD5_PseudoRandom(cmd->commandNumber) & 0x7FFFFFFF;
+    *memory->predictionRandomSeed = 0;
 
-    m_flOldCurtime = memory.globalVars->currenttime;
-    m_flOldFrametime = memory.globalVars->frametime;
+    const auto oldCurrenttime = memory->globalVars->currenttime;
+    const auto oldFrametime = memory->globalVars->frametime;
 
-    memory.globalVars->currenttime = memory.globalVars->serverTime(cmd);
-    memory.globalVars->frametime = memory.globalVars->intervalPerTick;
+    memory->globalVars->currenttime = memory->globalVars->serverTime();
+    memory->globalVars->frametime = memory->globalVars->intervalPerTick;
 
-    interfaces.gameMovement->StartTrackPredictionErrors(localPlayer);
+    memory->moveHelper->setHost(localPlayer.get());
+    interfaces->prediction->setupMove(localPlayer.get(), cmd, memory->moveHelper, memory->moveData);
+    interfaces->gameMovement->processMovement(localPlayer.get(), memory->moveData);
+    interfaces->prediction->finishMove(localPlayer.get(), cmd, memory->moveData);
+    memory->moveHelper->setHost(nullptr);
 
-    memset(&m_MoveData, 0, sizeof(m_MoveData));
-    memory.moveHelper->SetHost(localPlayer);
-    interfaces.prediction->SetupMove(localPlayer, cmd, memory.moveHelper, &m_MoveData);
-    interfaces.gameMovement->ProcessMovement(localPlayer, &m_MoveData);
-    interfaces.prediction->FinishMove(localPlayer, cmd, &m_MoveData);
+    *memory->predictionRandomSeed = -1;
+
+    memory->globalVars->currenttime = oldCurrenttime;
+    memory->globalVars->frametime = oldFrametime;
 }
 
-void PredictionSys::EndEnginePred() noexcept
+int EnginePrediction::getFlags() noexcept
 {
-    auto localPlayer = interfaces.entityList->getEntity(interfaces.engine->getLocalPlayer());
-
-    interfaces.gameMovement->FinishTrackPredictionErrors(localPlayer);
-    memory.moveHelper->SetHost(nullptr);
-
-    *memory.predictionRandomSeed = -1;
-
-    memory.globalVars->currenttime = m_flOldCurtime;
-    memory.globalVars->frametime = m_flOldFrametime;
+    return localPlayerFlags;
 }
