@@ -2,10 +2,12 @@
 
 #include <array>
 #include <filesystem>
+#include <memory>
 #include <string>
 
 #include "imgui/imgui.h"
 #include "nSkinz/config_.hpp"
+#include "ConfigStructs.h"
 
 class Config {
 public:
@@ -16,6 +18,7 @@ public:
     void remove(size_t) noexcept;
     void rename(size_t, const char*) noexcept;
     void reset() noexcept;
+    void listConfigs() noexcept;
 
     constexpr auto& getConfigs() noexcept
     {
@@ -46,12 +49,9 @@ public:
         bool ignoreSmoke{ false };
         bool autoShot{ false };
         bool autoScope{ false };
-        bool recoilbasedFov{ false };
         float fov{ 0.0f };
         float smooth{ 1.0f };
         int bone{ 0 };
-        float recoilControlX{ 0.0f };
-        float recoilControlY{ 0.0f };
         float maxAimInaccuracy{ 1.0f };
         float maxShotInaccuracy{ 1.0f };
         int minDamage{ 1 };
@@ -61,17 +61,18 @@ public:
     std::array<Aimbot, 40> aimbot;
 
     struct Triggerbot {
-        bool enabled{ false };
-        bool onKey{ false };
-        int key{ 0 };
-        bool friendlyFire{ false };
-        bool scopedOnly{ true };
-        bool ignoreFlash{ false };
-        bool ignoreSmoke{ false };
-        int hitgroup{ 0 };
-        int shotDelay{ 0 };
-        int minDamage{ 1 };
-        bool killshot{ false };
+        bool enabled = false;
+        bool friendlyFire = false;
+        bool scopedOnly = true;
+        bool ignoreFlash = false;
+        bool ignoreSmoke = false;
+        bool killshot = false;
+        bool onKey = false;
+        int key = 0;
+        int hitgroup = 0;
+        int shotDelay = 0;
+        int minDamage = 1;
+        float burstTime = 0.0f;
     };
     std::array<Triggerbot, 40> triggerbot;
 
@@ -80,15 +81,13 @@ public:
         bool ignoreSmoke{ false };
         bool recoilBasedFov{ false };
         int timeLimit{ 200 };
-        bool pingBased{ 0 };
-        bool drawAllTicks{ false };
     } backtrack;
 
     struct {
         bool enabled{ false };
         bool pitch{ false };
-        float pitchAngle{ 0.0f };
         bool yaw{ false };
+        float pitchAngle{ 0.0f };
     } antiAim;
 
     struct Glow {
@@ -103,13 +102,13 @@ public:
 
     struct Chams {
         struct Material {
-            bool enabled{ false };
-            bool healthBased{ false };
+            bool enabled = false;
+            bool healthBased = false;
+            bool blinking = false;
+            bool wireframe = false;
             Color color;
-            bool blinking{ false };
-            int material{ 0 };
-            bool wireframe{ false };
-            float alpha{ 1.0f };
+            int material = 0;
+            float alpha = 1.0f;
         };
         std::array<Material, 2> materials;
     };
@@ -124,6 +123,7 @@ public:
             ColorToggle box;
             int boxType{ 0 };
             ColorToggle name;
+            ColorToggle ammo;
             ColorToggle outline{ 0.0f, 0.0f, 0.0f };
             ColorToggle distance;
             float maxDistance{ 0.0f };
@@ -138,6 +138,8 @@ public:
             ColorToggle money;
             ColorToggle headDot;
             ColorToggle activeWeapon;
+            int hpside{ 0 };
+            int armorside{ 0 };
             bool deadesp { false };
         };
 
@@ -155,11 +157,6 @@ public:
     struct {
         bool disablePostProcessing{ false };
         bool inverseRagdollGravity{ false };
-        int inverseRagdollGravityValue{ -600 };
-        bool inverseRagdollGravityCustomize{ false };
-        bool ragdollTimescaleEnable{ false };
-        bool ragdollTimescaleCustomize{ false };
-        float ragdollTimescale{ 1.0f };
         bool noFog{ false };
         bool no3dSky{ false };
         bool noAimPunch{ false };
@@ -194,23 +191,7 @@ public:
         float hitMarkerTime{ 0.6f };
         int playerModelT{ 0 };
         int playerModelCT{ 0 };
-        bool customViewmodelToggle{ false };
-        float viewmodel_x{ 0 };
-        float viewmodel_y{ 0 };
-        float viewmodel_z{ 0 };
-        bool customViewmodelKnifeToggle{ false };
-        bool customViewmodelKnifeOut{ false };
-        bool customViewmodelKnifeEnabled{ false };
-        bool customViewmodelMenuSwitch{ false };
-        bool customViewmodelMenuCustomize{ false };
-        bool customViewmodelBombEquiped{ false };
-        bool customViewmodelSwitchHand{ false };
-        bool customViewmodelSwitchHandKnife{ false };
-        float viewmodel_x_knife{ 0 };
-        float viewmodel_y_knife{ 0 };
-        float viewmodel_z_knife{ 0 };
-        bool view_bob{ false };
-        bool fullBright{ false };
+
         struct {
             bool enabled = false;
             float blue = 0.0f;
@@ -247,7 +228,6 @@ public:
         int menuKey{ 0x2D }; // VK_INSERT
         bool antiAfkKick{ false };
         bool autoStrafe{ false };
-        int autoStrafeKey{ 0 };
         bool bunnyHop{ false };
         bool customClanTag{ false };
         bool clocktag{ false };
@@ -259,8 +239,6 @@ public:
         int edgejumpkey{ 0 };
         bool slowwalk{ false };
         int slowwalkKey{ 0 };
-        bool fastwalk{ false };
-        int fastwalkKey{ 0 };
         bool sniperCrosshair{ false };
         bool recoilCrosshair{ false };
         bool autoPistol{ false };
@@ -281,12 +259,10 @@ public:
         std::string killMessageString{ "Gotcha!" };
         bool nameStealer{ false };
         bool disablePanoramablur{ false };
-        std::string voteText;
         int banColor{ 6 };
         std::string banText{ "Cheater has been permanently banned from official CS:GO servers." };
         bool fastPlant{ false };
         ColorToggle bombTimer{ 1.0f, 0.55f, 0.0f };
-        bool bombDamage{ false };
         bool quickReload{ false };
         bool prepareRevolver{ false };
         int prepareRevolverKey{ 0 };
@@ -298,22 +274,26 @@ public:
         bool fixTabletSignal{ false };
         float maxAngleDelta{ 255.0f };
         bool fakePrime{ false };
+        int killSound{ 0 };
+        std::string customKillSound;
+        std::string customHitSound;
+        PurchaseList purchaseList;
     } misc;
 
     struct {
         bool enabled{ false };
-        int target{ 0 };
-        int delay{ 10 };
-        bool aimbot{ true };
-        bool wallhack{ true };
-        bool other{ true };
-        bool griefing{ false };
-        bool voiceAbuse{ false };
         bool textAbuse{ false };
+        bool griefing{ false };
+        bool wallhack{ true };
+        bool aimbot{ true };
+        bool other{ true };
+        int target{ 0 };
+        int delay{ 1 };
+        int rounds{ 1 };
     } reportbot;
 private:
     std::filesystem::path path;
     std::vector<std::string> configs;
 };
 
-extern Config config;
+inline std::unique_ptr<Config> config;
