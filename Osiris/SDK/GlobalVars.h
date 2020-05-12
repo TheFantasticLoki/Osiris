@@ -1,6 +1,8 @@
 #pragma once
 
-#include <cstddef>
+#include "Entity.h"
+#include "EntityList.h"
+#include "../Interfaces.h"
 
 struct UserCmd;
 

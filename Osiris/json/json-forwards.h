@@ -99,6 +99,16 @@ license you like.
 #include <string>
 #include <type_traits>
 
+/// If defined, indicates that json library is embedded in CppTL library.
+//# define JSON_IN_CPPTL 1
+
+/// If defined, indicates that json may leverage CppTL library
+//#  define JSON_USE_CPPTL 1
+/// If defined, indicates that cpptl vector based map should be used instead of
+/// std::map
+/// as Value container.
+//#  define JSON_USE_CPPTL_SMALLMAP 1
+
 // If non-zero, the library uses exceptions to report bad input instead of C
 // assertion macros. The default is to use exceptions.
 #ifndef JSON_USE_EXCEPTION
@@ -115,22 +125,28 @@ license you like.
 /// Remarks: it is automatically defined in the generated amalgamated header.
 // #define JSON_IS_AMALGAMATION
 
-// Export macros for DLL visibility
-#if defined(JSON_DLL_BUILD)
+#ifdef JSON_IN_CPPTL
+#include <cpptl/config.h>
+#ifndef JSON_USE_CPPTL
+#define JSON_USE_CPPTL 1
+#endif
+#endif
+
+#ifdef JSON_IN_CPPTL
+#define JSON_API CPPTL_API
+#elif defined(JSON_DLL_BUILD)
 #if defined(_MSC_VER) || defined(__MINGW32__)
 #define JSON_API __declspec(dllexport)
 #define JSONCPP_DISABLE_DLL_INTERFACE_WARNING
 #elif defined(__GNUC__) || defined(__clang__)
 #define JSON_API __attribute__((visibility("default")))
 #endif // if defined(_MSC_VER)
-
 #elif defined(JSON_DLL)
 #if defined(_MSC_VER) || defined(__MINGW32__)
 #define JSON_API __declspec(dllimport)
 #define JSONCPP_DISABLE_DLL_INTERFACE_WARNING
 #endif // if defined(_MSC_VER)
-#endif // ifdef JSON_DLL_BUILD
-
+#endif // ifdef JSON_IN_CPPTL
 #if !defined(JSON_API)
 #define JSON_API
 #endif
@@ -204,23 +220,23 @@ extern JSON_API int msvc_pre1900_c99_snprintf(char* outBuf, size_t size,
 #endif // if !defined(JSON_IS_AMALGAMATION)
 
 namespace Json {
-    using Int = int;
-    using UInt = unsigned int;
+    typedef int Int;
+    typedef unsigned int UInt;
 #if defined(JSON_NO_INT64)
-    using LargestInt = int;
-    using LargestUInt = unsigned int;
+    typedef int LargestInt;
+    typedef unsigned int LargestUInt;
 #undef JSON_HAS_INT64
 #else                 // if defined(JSON_NO_INT64)
     // For Microsoft Visual use specific types as long long is not supported
 #if defined(_MSC_VER) // Microsoft Visual Studio
-    using Int64 = __int64;
-    using UInt64 = unsigned __int64;
+    typedef __int64 Int64;
+    typedef unsigned __int64 UInt64;
 #else                 // if defined(_MSC_VER) // Other platforms, use long long
-    using Int64 = int64_t;
-    using UInt64 = uint64_t;
+    typedef int64_t Int64;
+    typedef uint64_t UInt64;
 #endif                // if defined(_MSC_VER)
-    using LargestInt = Int64;
-    using LargestUInt = UInt64;
+    typedef Int64 LargestInt;
+    typedef UInt64 LargestUInt;
 #define JSON_HAS_INT64
 #endif // if defined(JSON_NO_INT64)
 
@@ -292,7 +308,7 @@ namespace Json {
     class Features;
 
     // value.h
-    using ArrayIndex = unsigned int;
+    typedef unsigned int ArrayIndex;
     class StaticString;
     class Path;
     class PathArgument;

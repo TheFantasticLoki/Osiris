@@ -1,6 +1,5 @@
 #pragma once
 
-namespace Esp
-{
+namespace Esp {
     void render() noexcept;
 }

@@ -13,7 +13,15 @@ Config::Config(const char* name) noexcept
         CoTaskMemFree(pathToDocuments);
     }
 
-    listConfigs();
+    if (!std::filesystem::is_directory(path)) {
+        std::filesystem::remove(path);
+        std::filesystem::create_directory(path);
+    }
+
+    std::transform(std::filesystem::directory_iterator{ path },
+                   std::filesystem::directory_iterator{ },
+                   std::back_inserter(configs),
+                   [](const auto& entry) { return std::string{ (const char*)entry.path().filename().u8string().c_str() }; });
 }
 
 void Config::load(size_t id) noexcept
@@ -42,9 +50,12 @@ void Config::load(size_t id) noexcept
         if (aimbotJson.isMember("Ignore smoke")) aimbotConfig.ignoreSmoke = aimbotJson["Ignore smoke"].asBool();
         if (aimbotJson.isMember("Auto shot")) aimbotConfig.autoShot = aimbotJson["Auto shot"].asBool();
         if (aimbotJson.isMember("Auto scope")) aimbotConfig.autoScope = aimbotJson["Auto scope"].asBool();
+        if (aimbotJson.isMember("Recoil-based fov")) aimbotConfig.recoilbasedFov = aimbotJson["Recoil-based fov"].asBool();
         if (aimbotJson.isMember("Fov")) aimbotConfig.fov = aimbotJson["Fov"].asFloat();
         if (aimbotJson.isMember("Smooth")) aimbotConfig.smooth = aimbotJson["Smooth"].asFloat();
         if (aimbotJson.isMember("Bone")) aimbotConfig.bone = aimbotJson["Bone"].asInt();
+        if (aimbotJson.isMember("Recoil control X")) aimbotConfig.recoilControlX = aimbotJson["Recoil control X"].asFloat();
+        if (aimbotJson.isMember("Recoil control Y")) aimbotConfig.recoilControlY = aimbotJson["Recoil control Y"].asFloat();
         if (aimbotJson.isMember("Max aim inaccuracy")) aimbotConfig.maxAimInaccuracy = aimbotJson["Max aim inaccuracy"].asFloat();
         if (aimbotJson.isMember("Max shot inaccuracy")) aimbotConfig.maxShotInaccuracy = aimbotJson["Max shot inaccuracy"].asFloat();
         if (aimbotJson.isMember("Min damage")) aimbotConfig.minDamage = aimbotJson["Min damage"].asInt();
@@ -67,7 +78,6 @@ void Config::load(size_t id) noexcept
         if (triggerbotJson.isMember("Shot delay")) triggerbotConfig.shotDelay = triggerbotJson["Shot delay"].asInt();
         if (triggerbotJson.isMember("Min damage")) triggerbotConfig.minDamage = triggerbotJson["Min damage"].asInt();
         if (triggerbotJson.isMember("Killshot")) triggerbotConfig.killshot = triggerbotJson["Killshot"].asBool();
-        if (triggerbotJson.isMember("Burst Time")) triggerbotConfig.burstTime = triggerbotJson["Burst Time"].asFloat();
     }
 
     {
@@ -76,6 +86,8 @@ void Config::load(size_t id) noexcept
         if (backtrackJson.isMember("Ignore smoke")) backtrack.ignoreSmoke = backtrackJson["Ignore smoke"].asBool();
         if (backtrackJson.isMember("Recoil based fov")) backtrack.recoilBasedFov = backtrackJson["Recoil based fov"].asBool();
         if (backtrackJson.isMember("Time limit")) backtrack.timeLimit = backtrackJson["Time limit"].asInt();
+        if (backtrackJson.isMember("Ping Based")) backtrack.pingBased = backtrackJson["Ping Based"].asBool();
+        if (backtrackJson.isMember("Draw all ticks")) backtrack.drawAllTicks = backtrackJson["Draw all ticks"].asBool();
     }
 
     {
@@ -143,11 +155,9 @@ void Config::load(size_t id) noexcept
     for (size_t i = 0; i < esp.players.size(); i++) {
         const auto& espJson = json["Esp"]["Players"][i];
         auto& espConfig = esp.players[i];
-
+        
         if (espJson.isMember("Enabled")) espConfig.enabled = espJson["Enabled"].asBool();
         if (espJson.isMember("Font")) espConfig.font = espJson["Font"].asInt();
-        if (espJson.isMember("HP side")) espConfig.hpside = espJson["HP side"].asInt();
-        if (espJson.isMember("Armor side")) espConfig.armorside = espJson["Armor side"].asInt();
 
         if (espJson.isMember("Snaplines")) {
             const auto& snaplinesJson = espJson["Snaplines"];
@@ -342,21 +352,7 @@ void Config::load(size_t id) noexcept
             if (outlineJson.isMember("Rainbow")) outlineConfig.rainbow = outlineJson["Rainbow"].asBool();
             if (outlineJson.isMember("Rainbow speed")) outlineConfig.rainbowSpeed = outlineJson["Rainbow speed"].asFloat();
         }
-        if (espJson.isMember("Ammo")) {
-            const auto& ammoJson = espJson["Ammo"];
-            auto& ammoConfig = espConfig.ammo;
 
-            if (ammoJson.isMember("Enabled")) ammoConfig.enabled = ammoJson["Enabled"].asBool();
-
-            if (ammoJson.isMember("Color")) {
-                ammoConfig.color[0] = ammoJson["Color"][0].asFloat();
-                ammoConfig.color[1] = ammoJson["Color"][1].asFloat();
-                ammoConfig.color[2] = ammoJson["Color"][2].asFloat();
-            }
-
-            if (ammoJson.isMember("Rainbow")) ammoConfig.rainbow = ammoJson["Rainbow"].asBool();
-            if (ammoJson.isMember("Rainbow speed")) ammoConfig.rainbowSpeed = ammoJson["Rainbow speed"].asFloat();
-        }
         if (espJson.isMember("Distance")) {
             const auto& distanceJson = espJson["Distance"];
             auto& distanceConfig = espConfig.distance;
@@ -372,7 +368,7 @@ void Config::load(size_t id) noexcept
             if (distanceJson.isMember("Rainbow")) distanceConfig.rainbow = distanceJson["Rainbow"].asBool();
             if (distanceJson.isMember("Rainbow speed")) distanceConfig.rainbowSpeed = distanceJson["Rainbow speed"].asFloat();
         }
-
+        
         if (espJson.isMember("Dead ESP")) espConfig.deadesp = espJson["Dead ESP"].asBool();
         if (espJson.isMember("Max distance")) espConfig.maxDistance = espJson["Max distance"].asFloat();
     }
@@ -489,7 +485,7 @@ void Config::load(size_t id) noexcept
             if (snaplinesJson.isMember("Rainbow")) snaplinesConfig.rainbow = snaplinesJson["Rainbow"].asBool();
             if (snaplinesJson.isMember("Rainbow speed")) snaplinesConfig.rainbowSpeed = snaplinesJson["Rainbow speed"].asFloat();
         }
-
+        
         if (espJson.isMember("Box")) {
             const auto& boxJson = espJson["Box"];
             auto& boxConfig = espConfig.box;
@@ -654,6 +650,11 @@ void Config::load(size_t id) noexcept
         if (visualsJson.isMember("disablePostProcessing")) visuals.disablePostProcessing = visualsJson["disablePostProcessing"].asBool();
         if (visualsJson.isMember("inverseRagdollGravity")) visuals.inverseRagdollGravity = visualsJson["inverseRagdollGravity"].asBool();
         if (visualsJson.isMember("noFog")) visuals.noFog = visualsJson["noFog"].asBool();
+        if (visualsJson.isMember("inverseRagdollGravityValue")) visuals.inverseRagdollGravityValue = visualsJson["inverseRagdollGravityValue"].asInt();
+        if (visualsJson.isMember("inverseRagdollGravityCustomize")) visuals.inverseRagdollGravityCustomize = visualsJson["inverseRagdollGravityCustomize"].asBool();
+        if (visualsJson.isMember("ragdollTimescale")) visuals.ragdollTimescale = visualsJson["ragdollTimescale"].asFloat();
+        if (visualsJson.isMember("ragdollTimescaleEnable")) visuals.ragdollTimescaleEnable = visualsJson["ragdollTimescaleEnable"].asBool();
+        if (visualsJson.isMember("ragdollTimescaleCustomize")) visuals.ragdollTimescaleCustomize = visualsJson["ragdollTimescaleCustomize"].asBool();
         if (visualsJson.isMember("no3dSky")) visuals.no3dSky = visualsJson["no3dSky"].asBool();
         if (visualsJson.isMember("No aim punch")) visuals.noAimPunch = visualsJson["No aim punch"].asBool();
         if (visualsJson.isMember("No view punch")) visuals.noViewPunch = visualsJson["No view punch"].asBool();
@@ -711,7 +712,6 @@ void Config::load(size_t id) noexcept
         if (visualsJson.isMember("Hit marker time")) visuals.hitMarkerTime = visualsJson["Hit marker time"].asFloat();
         if (visualsJson.isMember("Playermodel T")) visuals.playerModelT = visualsJson["Playermodel T"].asInt();
         if (visualsJson.isMember("Playermodel CT")) visuals.playerModelCT = visualsJson["Playermodel CT"].asInt();
-
         if (visualsJson.isMember("Color correction")) {
             const auto& cc = visualsJson["Color correction"];
 
@@ -724,6 +724,21 @@ void Config::load(size_t id) noexcept
             if (cc.isMember("Green")) visuals.colorCorrection.green = cc["Green"].asFloat();
             if (cc.isMember("Yellow")) visuals.colorCorrection.yellow = cc["Yellow"].asFloat();
         }
+        if (visualsJson.isMember("Custom Viewmodel Toggle")) visuals.customViewmodelToggle = visualsJson["Custom Viewmodel Toggle"].asBool();
+        if (visualsJson.isMember("Custom Viewmodel Menu Switch")) visuals.customViewmodelMenuSwitch = visualsJson["Custom Viewmodel Menu Switch"].asBool();
+        if (visualsJson.isMember("Custom Viewmodel Menu Customize")) visuals.customViewmodelMenuCustomize = visualsJson["Custom Viewmodel Menu Customize"].asBool();
+        if (visualsJson.isMember("Custom Viewmodel X")) visuals.viewmodel_x = visualsJson["Custom Viewmodel X"].asFloat();
+        if (visualsJson.isMember("Custom Viewmodel Y")) visuals.viewmodel_y = visualsJson["Custom Viewmodel Y"].asFloat();
+        if (visualsJson.isMember("Custom Viewmodel Z")) visuals.viewmodel_z = visualsJson["Custom Viewmodel Z"].asFloat();
+        if (visualsJson.isMember("Custom Viewmodel X Knife")) visuals.viewmodel_x_knife = visualsJson["Custom Viewmodel X Knife"].asFloat();
+        if (visualsJson.isMember("Custom Viewmodel Y Knife")) visuals.viewmodel_y_knife = visualsJson["Custom Viewmodel Y Knife"].asFloat();
+        if (visualsJson.isMember("Custom Viewmodel Z Knife")) visuals.viewmodel_z_knife = visualsJson["Custom Viewmodel Z Knife"].asFloat();
+        if (visualsJson.isMember("Custom Viewmodel Knife Toggle")) visuals.customViewmodelKnifeToggle = visualsJson["Custom Viewmodel Knife Toggle"].asBool();
+        if (visualsJson.isMember("Custom Viewmodel Knife Enabled")) visuals.customViewmodelKnifeEnabled = visualsJson["Custom Viewmodel Knife Enabled"].asBool();
+        if (visualsJson.isMember("Custom Viewmodel Switch Hand")) visuals.customViewmodelSwitchHand = visualsJson["Custom Viewmodel Switch Hand"].asBool();
+        if (visualsJson.isMember("Custom Viewmodel Switch Hand Knife")) visuals.customViewmodelSwitchHandKnife = visualsJson["Custom Viewmodel Switch Hand Knife"].asBool();
+        if (visualsJson.isMember("Custom Viewmodel Bob")) visuals.view_bob = visualsJson["Custom Viewmodel Bob"].asBool();
+        if (visualsJson.isMember("Full Brightness Light")) visuals.fullBright = visualsJson["Full Brightness Light"].asBool();
     }
 
     for (size_t i = 0; i < skinChanger.size(); i++) {
@@ -731,12 +746,12 @@ void Config::load(size_t id) noexcept
         auto& skinChangerConfig = skinChanger[i];
 
         if (skinChangerJson.isMember("Enabled")) skinChangerConfig.enabled = skinChangerJson["Enabled"].asBool();
-        if (skinChangerJson.isMember("definition_vector_index")) skinChangerConfig.itemIdIndex = skinChangerJson["definition_vector_index"].asInt();
-        if (skinChangerJson.isMember("definition_index")) skinChangerConfig.itemId = skinChangerJson["definition_index"].asInt();
+        if (skinChangerJson.isMember("definition_vector_index")) skinChangerConfig.definition_vector_index = skinChangerJson["definition_vector_index"].asInt();
+        if (skinChangerJson.isMember("definition_index")) skinChangerConfig.definition_index = skinChangerJson["definition_index"].asInt();
         if (skinChangerJson.isMember("entity_quality_vector_index")) skinChangerConfig.entity_quality_vector_index = skinChangerJson["entity_quality_vector_index"].asInt();
-        if (skinChangerJson.isMember("entity_quality_index")) skinChangerConfig.quality = skinChangerJson["entity_quality_index"].asInt();
+        if (skinChangerJson.isMember("entity_quality_index")) skinChangerConfig.entity_quality_index = skinChangerJson["entity_quality_index"].asInt();
         if (skinChangerJson.isMember("paint_kit_vector_index")) skinChangerConfig.paint_kit_vector_index = skinChangerJson["paint_kit_vector_index"].asInt();
-        if (skinChangerJson.isMember("paint_kit_index")) skinChangerConfig.paintKit = skinChangerJson["paint_kit_index"].asInt();
+        if (skinChangerJson.isMember("paint_kit_index")) skinChangerConfig.paint_kit_index = skinChangerJson["paint_kit_index"].asInt();
         if (skinChangerJson.isMember("definition_override_vector_index")) skinChangerConfig.definition_override_vector_index = skinChangerJson["definition_override_vector_index"].asInt();
         if (skinChangerJson.isMember("definition_override_index")) skinChangerConfig.definition_override_index = skinChangerJson["definition_override_index"].asInt();
         if (skinChangerJson.isMember("seed")) skinChangerConfig.seed = skinChangerJson["seed"].asInt();
@@ -806,6 +821,7 @@ void Config::load(size_t id) noexcept
         if (miscJson.isMember("Menu key")) misc.menuKey = miscJson["Menu key"].asInt();
         if (miscJson.isMember("Anti AFK kick")) misc.antiAfkKick = miscJson["Anti AFK kick"].asBool();
         if (miscJson.isMember("Auto strafe")) misc.autoStrafe = miscJson["Auto strafe"].asBool();
+        if (miscJson.isMember("Auto strafe Key")) misc.autoStrafeKey = miscJson["Auto strafe Key"].asInt();
         if (miscJson.isMember("Bunny hop")) misc.bunnyHop = miscJson["Bunny hop"].asBool();
         if (miscJson.isMember("Custom clan tag")) misc.customClanTag = miscJson["Custom clan tag"].asBool();
         if (miscJson.isMember("Clock tag")) misc.clocktag = miscJson["Clock tag"].asBool();
@@ -817,6 +833,8 @@ void Config::load(size_t id) noexcept
         if (miscJson.isMember("Edge Jump Key")) misc.edgejumpkey = miscJson["Edge Jump Key"].asInt();
         if (miscJson.isMember("Slowwalk")) misc.slowwalk = miscJson["Slowwalk"].asBool();
         if (miscJson.isMember("Slowwalk key")) misc.slowwalkKey = miscJson["Slowwalk key"].asInt();
+        if (miscJson.isMember("Fastwalk")) misc.fastwalk = miscJson["Fastwalk"].asBool();
+        if (miscJson.isMember("Fastwalk key")) misc.fastwalkKey = miscJson["Fastwalk key"].asInt();
         if (miscJson.isMember("Sniper crosshair")) misc.sniperCrosshair = miscJson["Sniper crosshair"].asBool();
         if (miscJson.isMember("Recoil crosshair")) misc.recoilCrosshair = miscJson["Recoil crosshair"].asBool();
         if (miscJson.isMember("Auto pistol")) misc.autoPistol = miscJson["Auto pistol"].asBool();
@@ -868,6 +886,7 @@ void Config::load(size_t id) noexcept
         if (miscJson.isMember("Kill message string")) misc.killMessageString = miscJson["Kill message string"].asString();
         if (miscJson.isMember("Name stealer"))  misc.nameStealer = miscJson["Name stealer"].asBool();
         if (miscJson.isMember("Disable HUD blur"))  misc.disablePanoramablur = miscJson["Disable HUD blur"].asBool();
+        if (miscJson.isMember("Vote text")) misc.voteText = miscJson["Vote text"].asString();
         if (miscJson.isMember("Ban color")) misc.banColor = miscJson["Ban color"].asInt();
         if (miscJson.isMember("Ban text")) misc.banText = miscJson["Ban text"].asString();
         if (miscJson.isMember("Fast plant")) misc.fastPlant = miscJson["Fast plant"].asBool();
@@ -888,6 +907,7 @@ void Config::load(size_t id) noexcept
                 misc.bombTimer.rainbowSpeed = rainbowSpeed.asFloat();
         }
 
+        if (miscJson.isMember("Bomb Damage Indicator")) misc.bombDamage = miscJson["Bomb Damage Indicator"].asBool();
         if (miscJson.isMember("Quick reload")) misc.quickReload = miscJson["Quick reload"].asBool();
         if (miscJson.isMember("Prepare revolver")) misc.prepareRevolver = miscJson["Prepare revolver"].asBool();
         if (miscJson.isMember("Prepare revolver key")) misc.prepareRevolverKey = miscJson["Prepare revolver key"].asInt();
@@ -899,22 +919,6 @@ void Config::load(size_t id) noexcept
         if (miscJson.isMember("Fix tablet signal")) misc.fixTabletSignal = miscJson["Fix tablet signal"].asBool();
         if (miscJson.isMember("Max angle delta")) misc.maxAngleDelta = miscJson["Max angle delta"].asFloat();
         if (miscJson.isMember("Fake prime")) misc.fakePrime = miscJson["Fake prime"].asBool();
-        if (miscJson.isMember("Custom Hit Sound")) misc.customHitSound = miscJson["Custom Hit Sound"].asString();
-        if (miscJson.isMember("Kill sound")) misc.killSound = miscJson["Kill sound"].asInt();
-        if (miscJson.isMember("Custom Kill Sound")) misc.customKillSound = miscJson["Custom Kill Sound"].asString();
-
-        if (const auto& purchaseList = miscJson["Purchase List"]; purchaseList.isObject()) {
-            if (const auto& enabled{ purchaseList["Enabled"] }; enabled.isBool())
-                misc.purchaseList.enabled = enabled.asBool();
-            if (const auto& onlyDuringFreezeTime{ purchaseList["Only During Freeze Time"] }; onlyDuringFreezeTime.isBool())
-                misc.purchaseList.onlyDuringFreezeTime = onlyDuringFreezeTime.asBool();
-            if (const auto& showPrices{ purchaseList["Show Prices"] }; showPrices.isBool())
-                misc.purchaseList.showPrices = showPrices.asBool();
-            if (const auto& noTitleBar{ purchaseList["No Title Bar"] }; noTitleBar.isBool())
-                misc.purchaseList.noTitleBar = noTitleBar.asBool();
-            if (const auto& mode{ purchaseList["Mode"] }; mode.isInt())
-                misc.purchaseList.mode = mode.asInt();
-        }
     }
 
     {
@@ -923,12 +927,12 @@ void Config::load(size_t id) noexcept
         if (reportbotJson.isMember("Enabled")) reportbot.enabled = reportbotJson["Enabled"].asBool();
         if (reportbotJson.isMember("Target")) reportbot.target = reportbotJson["Target"].asInt();
         if (reportbotJson.isMember("Delay")) reportbot.delay = reportbotJson["Delay"].asInt();
-        if (reportbotJson.isMember("Rounds")) reportbot.rounds = reportbotJson["Rounds"].asInt();
-        if (reportbotJson.isMember("Abusive Communications")) reportbot.textAbuse = reportbotJson["Abusive Communications"].asBool();
+        if (reportbotJson.isMember("Aimbot")) reportbot.aimbot = reportbotJson["Aimbot"].asBool();
+        if (reportbotJson.isMember("Wallhack")) reportbot.wallhack = reportbotJson["Wallhack"].asBool();
+        if (reportbotJson.isMember("Other")) reportbot.other = reportbotJson["Other"].asBool();
         if (reportbotJson.isMember("Griefing")) reportbot.griefing = reportbotJson["Griefing"].asBool();
-        if (reportbotJson.isMember("Wall Hacking")) reportbot.wallhack = reportbotJson["Wall Hacking"].asBool();
-        if (reportbotJson.isMember("Aim Hacking")) reportbot.aimbot = reportbotJson["Aim Hacking"].asBool();
-        if (reportbotJson.isMember("Other Hacking")) reportbot.other = reportbotJson["Other Hacking"].asBool();
+        if (reportbotJson.isMember("Voice abuse")) reportbot.voiceAbuse = reportbotJson["Voice abuse"].asBool();
+        if (reportbotJson.isMember("Text abuse")) reportbot.textAbuse = reportbotJson["Text abuse"].asBool();
     }
 }
 
@@ -953,9 +957,12 @@ void Config::save(size_t id) const noexcept
         aimbotJson["Ignore smoke"] = aimbotConfig.ignoreSmoke;
         aimbotJson["Auto shot"] = aimbotConfig.autoShot;
         aimbotJson["Auto scope"] = aimbotConfig.autoScope;
+        aimbotJson["Recoil-based fov"] = aimbotConfig.recoilbasedFov;
         aimbotJson["Fov"] = aimbotConfig.fov;
         aimbotJson["Smooth"] = aimbotConfig.smooth;
         aimbotJson["Bone"] = aimbotConfig.bone;
+        aimbotJson["Recoil control X"] = aimbotConfig.recoilControlX;
+        aimbotJson["Recoil control Y"] = aimbotConfig.recoilControlY;
         aimbotJson["Max aim inaccuracy"] = aimbotConfig.maxAimInaccuracy;
         aimbotJson["Max shot inaccuracy"] = aimbotConfig.maxShotInaccuracy;
         aimbotJson["Min damage"] = aimbotConfig.minDamage;
@@ -978,7 +985,6 @@ void Config::save(size_t id) const noexcept
         triggerbotJson["Shot delay"] = triggerbotConfig.shotDelay;
         triggerbotJson["Min damage"] = triggerbotConfig.minDamage;
         triggerbotJson["Killshot"] = triggerbotConfig.killshot;
-        triggerbotJson["Burst Time"] = triggerbotConfig.burstTime;
     }
 
     {
@@ -987,6 +993,8 @@ void Config::save(size_t id) const noexcept
         backtrackJson["Ignore smoke"] = backtrack.ignoreSmoke;
         backtrackJson["Recoil based fov"] = backtrack.recoilBasedFov;
         backtrackJson["Time limit"] = backtrack.timeLimit;
+        backtrackJson["Draw all ticks"] = backtrack.drawAllTicks;
+        backtrackJson["Ping Based"] = backtrack.pingBased;
     }
 
     {
@@ -1056,8 +1064,6 @@ void Config::save(size_t id) const noexcept
 
         espJson["Enabled"] = espConfig.enabled;
         espJson["Font"] = espConfig.font;
-        espJson["HP side"] = espConfig.hpside;
-        espJson["Armor side"] = espConfig.armorside;
 
         {
             auto& snaplinesJson = espJson["Snaplines"];
@@ -1204,17 +1210,7 @@ void Config::save(size_t id) const noexcept
             outlineJson["Rainbow"] = outlineConfig.rainbow;
             outlineJson["Rainbow speed"] = outlineConfig.rainbowSpeed;
         }
-        {
-            auto& ammoJson = espJson["Ammo"];
-            const auto& ammoConfig = espConfig.ammo;
 
-            ammoJson["Enabled"] = ammoConfig.enabled;
-            ammoJson["Color"][0] = ammoConfig.color[0];
-            ammoJson["Color"][1] = ammoConfig.color[1];
-            ammoJson["Color"][2] = ammoConfig.color[2];
-            ammoJson["Rainbow"] = ammoConfig.rainbow;
-            ammoJson["Rainbow speed"] = ammoConfig.rainbowSpeed;
-        }
         {
             auto& distanceJson = espJson["Distance"];
             const auto& distanceConfig = espConfig.distance;
@@ -1333,7 +1329,7 @@ void Config::save(size_t id) const noexcept
         }
 
         espJson["Box type"] = espConfig.boxType;
-
+        
         {
             auto& outlineJson = espJson["Outline"];
             const auto& outlineConfig = espConfig.outline;
@@ -1449,6 +1445,11 @@ void Config::save(size_t id) const noexcept
         visualsJson["disablePostProcessing"] = visuals.disablePostProcessing;
         visualsJson["inverseRagdollGravity"] = visuals.inverseRagdollGravity;
         visualsJson["noFog"] = visuals.noFog;
+        visualsJson["inverseRagdollGravityValue"] = visuals.inverseRagdollGravityValue;
+        visualsJson["inverseRagdollGravityCustomize"] = visuals.inverseRagdollGravityCustomize;
+        visualsJson["ragdollTimescale"] = visuals.ragdollTimescale;
+        visualsJson["ragdollTimescaleEnable"] = visuals.ragdollTimescaleEnable;
+        visualsJson["ragdollTimescaleCustomize"] = visuals.ragdollTimescaleCustomize;
         visualsJson["no3dSky"] = visuals.no3dSky;
         visualsJson["No aim punch"] = visuals.noAimPunch;
         visualsJson["No view punch"] = visuals.noViewPunch;
@@ -1513,6 +1514,22 @@ void Config::save(size_t id) const noexcept
             cc["Green"] = visuals.colorCorrection.green;
             cc["Yellow"] = visuals.colorCorrection.yellow;
         }
+		visualsJson["Custom Viewmodel Toggle"] = visuals.customViewmodelToggle;
+		visualsJson["Custom Viewmodel X"] = visuals.viewmodel_x;
+		visualsJson["Custom Viewmodel Y"] = visuals.viewmodel_y;
+		visualsJson["Custom Viewmodel Z"] = visuals.viewmodel_z;
+		visualsJson["Custom Viewmodel Knife Toggle"] = visuals.customViewmodelKnifeToggle;
+		visualsJson["Custom Viewmodel Knife Enabled"] = visuals.customViewmodelKnifeEnabled;
+		visualsJson["Custom Viewmodel Knife Switch"] = visuals.customViewmodelMenuSwitch;
+		visualsJson["Custom Viewmodel Switch Hand"] = visuals.customViewmodelSwitchHand;
+		visualsJson["Custom Viewmodel Switch Hand Knife"] = visuals.customViewmodelSwitchHandKnife;
+		visualsJson["Custom Viewmodel Menu Switch"] = visuals.customViewmodelMenuSwitch;
+		visualsJson["Custom Viewmodel Menu Customize"] = visuals.customViewmodelMenuCustomize;
+		visualsJson["Custom Viewmodel X Knife"] = visuals.viewmodel_x_knife;
+		visualsJson["Custom Viewmodel Y Knife"] = visuals.viewmodel_y_knife;
+		visualsJson["Custom Viewmodel Z Knife"] = visuals.viewmodel_z_knife;
+		visualsJson["Custom Viewmodel Bob"] = visuals.view_bob;
+		visualsJson["Full Brightness Light"] = visuals.fullBright;
     }
 
     for (size_t i = 0; i < skinChanger.size(); i++) {
@@ -1520,12 +1537,12 @@ void Config::save(size_t id) const noexcept
         const auto& skinChangerConfig = skinChanger[i];
 
         skinChangerJson["Enabled"] = skinChangerConfig.enabled;
-        skinChangerJson["definition_vector_index"] = skinChangerConfig.itemIdIndex;
-        skinChangerJson["definition_index"] = skinChangerConfig.itemId;
+        skinChangerJson["definition_vector_index"] = skinChangerConfig.definition_vector_index;
+        skinChangerJson["definition_index"] = skinChangerConfig.definition_index;
         skinChangerJson["entity_quality_vector_index"] = skinChangerConfig.entity_quality_vector_index;
-        skinChangerJson["entity_quality_index"] = skinChangerConfig.quality;
+        skinChangerJson["entity_quality_index"] = skinChangerConfig.entity_quality_index;
         skinChangerJson["paint_kit_vector_index"] = skinChangerConfig.paint_kit_vector_index;
-        skinChangerJson["paint_kit_index"] = skinChangerConfig.paintKit;
+        skinChangerJson["paint_kit_index"] = skinChangerConfig.paint_kit_index;
         skinChangerJson["definition_override_vector_index"] = skinChangerConfig.definition_override_vector_index;
         skinChangerJson["definition_override_index"] = skinChangerConfig.definition_override_index;
         skinChangerJson["seed"] = skinChangerConfig.seed;
@@ -1582,10 +1599,11 @@ void Config::save(size_t id) const noexcept
 
     {
         auto& miscJson = json["Misc"];
-
+        
         miscJson["Menu key"] = misc.menuKey;
         miscJson["Anti AFK kick"] = misc.antiAfkKick;
         miscJson["Auto strafe"] = misc.autoStrafe;
+        miscJson["Auto strafe Key"] = misc.autoStrafeKey;
         miscJson["Bunny hop"] = misc.bunnyHop;
         miscJson["Custom clan tag"] = misc.customClanTag;
         miscJson["Clock tag"] = misc.clocktag;
@@ -1597,6 +1615,8 @@ void Config::save(size_t id) const noexcept
         miscJson["Edge Jump Key"] = misc.edgejumpkey;
         miscJson["Slowwalk"] = misc.slowwalk;
         miscJson["Slowwalk key"] = misc.slowwalkKey;
+        miscJson["Fastwalk"] = misc.fastwalk;
+        miscJson["Fastwalk key"] = misc.fastwalkKey;
         miscJson["Sniper crosshair"] = misc.sniperCrosshair;
         miscJson["Recoil crosshair"] = misc.recoilCrosshair;
         miscJson["Auto pistol"] = misc.autoPistol;
@@ -1636,6 +1656,7 @@ void Config::save(size_t id) const noexcept
         miscJson["Kill message string"] = misc.killMessageString;
         miscJson["Name stealer"] = misc.nameStealer;
         miscJson["Disable HUD blur"] = misc.disablePanoramablur;
+        miscJson["Vote text"] = misc.voteText;
         miscJson["Ban color"] = misc.banColor;
         miscJson["Ban text"] = misc.banText;
         miscJson["Fast plant"] = misc.fastPlant;
@@ -1650,6 +1671,7 @@ void Config::save(size_t id) const noexcept
             bombTimerJson["Rainbow speed"] = misc.bombTimer.rainbowSpeed;
         }
 
+        miscJson["Bomb Damage Indicator"] = misc.bombDamage;
         miscJson["Quick reload"] = misc.quickReload;
         miscJson["Prepare revolver"] = misc.prepareRevolver;
         miscJson["Prepare revolver key"] = misc.prepareRevolverKey;
@@ -1661,18 +1683,6 @@ void Config::save(size_t id) const noexcept
         miscJson["Fix tablet signal"] = misc.fixTabletSignal;
         miscJson["Max angle delta"] = misc.maxAngleDelta;
         miscJson["Fake prime"] = misc.fakePrime;
-        miscJson["Custom Hit Sound"] = misc.customHitSound;
-        miscJson["Kill sound"] = misc.killSound;
-        miscJson["Custom Kill Sound"] = misc.customKillSound;
-
-        {
-            auto& purchaseListJson = miscJson["Purchase List"];
-            purchaseListJson["Enabled"] = misc.purchaseList.enabled;
-            purchaseListJson["Only During Freeze Time"] = misc.purchaseList.onlyDuringFreezeTime;
-            purchaseListJson["Show Prices"] = misc.purchaseList.showPrices;
-            purchaseListJson["No Title Bar"] = misc.purchaseList.noTitleBar;
-            purchaseListJson["Mode"] = misc.purchaseList.mode;
-        }
     }
 
     {
@@ -1681,16 +1691,18 @@ void Config::save(size_t id) const noexcept
         reportbotJson["Enabled"] = reportbot.enabled;
         reportbotJson["Target"] = reportbot.target;
         reportbotJson["Delay"] = reportbot.delay;
-        reportbotJson["Rounds"] = reportbot.rounds;
-        reportbotJson["Abusive Communications"] = reportbot.textAbuse;
+        reportbotJson["Aimbot"] = reportbot.aimbot;
+        reportbotJson["Wallhack"] = reportbot.wallhack;
+        reportbotJson["Other"] = reportbot.other;
         reportbotJson["Griefing"] = reportbot.griefing;
-        reportbotJson["Wall Hacking"] = reportbot.wallhack;
-        reportbotJson["Aim Hacking"] = reportbot.aimbot;
-        reportbotJson["Other Hacking"] = reportbot.other;
+        reportbotJson["Voice abuse"] = reportbot.voiceAbuse;
+        reportbotJson["Text abuse"] = reportbot.textAbuse;
     }
 
-    std::error_code ec;
-    std::filesystem::create_directory(path, ec);
+    if (!std::filesystem::is_directory(path)) {
+        std::filesystem::remove(path);
+        std::filesystem::create_directory(path);
+    }
 
     if (std::ofstream out{ path / (const char8_t*)configs[id].c_str() }; out.good())
         out << json;
@@ -1704,15 +1716,13 @@ void Config::add(const char* name) noexcept
 
 void Config::remove(size_t id) noexcept
 {
-    std::error_code ec;
-    std::filesystem::remove(path / (const char8_t*)configs[id].c_str(), ec);
+    std::filesystem::remove(path / (const char8_t*)configs[id].c_str());
     configs.erase(configs.cbegin() + id);
 }
 
 void Config::rename(size_t item, const char* newName) noexcept
 {
-    std::error_code ec;
-    std::filesystem::rename(path / (const char8_t*)configs[item].c_str(), path / (const char8_t*)newName, ec);
+    std::filesystem::rename(path / (const char8_t*)configs[item].c_str(), path / (const char8_t*)newName);
     configs[item] = newName;
 }
 
@@ -1730,15 +1740,4 @@ void Config::reset() noexcept
     style = { };
     misc = { };
     reportbot = { };
-}
-
-void Config::listConfigs() noexcept
-{
-    configs.clear();
-
-    std::error_code ec;
-    std::transform(std::filesystem::directory_iterator{ path, ec },
-                   std::filesystem::directory_iterator{ },
-                   std::back_inserter(configs),
-                   [](const auto& entry) { return std::string{ (const char*)entry.path().filename().u8string().c_str() }; });
 }

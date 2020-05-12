@@ -1,8 +1,11 @@
 #pragma once
 
-#include "VirtualMethod.h"
+#include "Utils.h"
 
 class SoundEmitter {
 public:
-    VIRTUAL_METHOD(const char*, getSoundName, 46, (int index), (this, index))
+    constexpr auto getSoundName(int index) noexcept
+    {
+        return callVirtualMethod<const char*, int>(this, 46, index);
+    }
 };
