@@ -20,10 +20,6 @@
 #include "../nSkinz/Utilities/vmt_smart_hook.hpp"
 #include "../SDK/GameEvent.h"
 
-std::vector<SkinChanger::PaintKit> SkinChanger::skinKits;
-std::vector<SkinChanger::PaintKit> SkinChanger::gloveKits;
-std::vector<SkinChanger::PaintKit> SkinChanger::stickerKits{ {0, "None"} };
-
 void SkinChanger::initializeKits() noexcept
 {
     std::ifstream items{ "csgo/scripts/items/items_game_cdn.txt" };
@@ -40,14 +36,14 @@ void SkinChanger::initializeKits() noexcept
         if (paintKit->id < 10000) {
             if (auto pos = gameItems.find('_' + std::string{ paintKit->name.buffer } +'='); pos != std::string::npos && gameItems.substr(pos + paintKit->name.length).find('_' + std::string{ paintKit->name.buffer } +'=') == std::string::npos) {
                 if (auto weaponName = gameItems.rfind("weapon_", pos); weaponName != std::string::npos) {
-                    name.back() = ' ';
+                    name += ' ';
                     name += '(' + gameItems.substr(weaponName + 7, pos - weaponName - 7) + ')';
                 }
             }
             skinKits.emplace_back(paintKit->id, std::move(name));
         } else {
             std::string_view gloveName{ paintKit->name.buffer };
-            name.back() = ' ';
+            name += ' ';
             name += '(' + std::string{ gloveName.substr(0, gloveName.find('_')) } +')';
             gloveKits.emplace_back(paintKit->id, std::move(name));
         }
@@ -55,6 +51,11 @@ void SkinChanger::initializeKits() noexcept
 
     std::sort(skinKits.begin(), skinKits.end());
     std::sort(gloveKits.begin(), gloveKits.end());
+
+    // this makes skins with same names work when selecting them
+    for (size_t i = 0; i < skinKits.size(); ++i) skinKits.at(i).name += "###" + std::to_string(i);
+    for (size_t i = 0; i < gloveKits.size(); ++i) gloveKits.at(i).name += "###" + std::to_string(i);
+
 
     for (int i = 0; i <= memory->itemSystem()->getItemSchema()->stickerKits.lastElement; i++) {
         const auto stickerKit = memory->itemSystem()->getItemSchema()->stickerKits.memory[i].value;
@@ -98,10 +99,9 @@ struct GetStickerAttributeBySlotIndexFloat {
         }
         return m_original(thisptr, nullptr, slot, attribute, unknown);
     }
-    static decltype(&hooked) m_original;
-};
 
-decltype(GetStickerAttributeBySlotIndexFloat::m_original) GetStickerAttributeBySlotIndexFloat::m_original;
+    inline static decltype(&hooked) m_original;
+};
 
 struct GetStickerAttributeBySlotIndexInt {
     static int __fastcall hooked(void* thisptr, void*, const int slot,
@@ -115,10 +115,8 @@ struct GetStickerAttributeBySlotIndexInt {
         return m_original(thisptr, nullptr, slot, attribute, unknown);
     }
 
-    static decltype(&hooked) m_original;
+    inline static decltype(&hooked) m_original;
 };
-
-decltype(GetStickerAttributeBySlotIndexInt::m_original) GetStickerAttributeBySlotIndexInt::m_original;
 
 void apply_sticker_changer(Entity* item) noexcept
 {
@@ -156,9 +154,15 @@ static void apply_config_on_attributable_item(Entity* item, const item_setting* 
 
     // Set the owner of the weapon to our lower XUID. (fixes StatTrak)
     item->accountID() = xuid_low;
+    item->entityQuality() = config->quality;
 
-    if (config->quality)
-        item->entityQuality() = config->quality;
+    if (config->stat_trak > -1) {
+        item->fallbackStatTrak() = config->stat_trak;
+        item->entityQuality() = 9;
+    }
+
+    if (is_knife(item->itemDefinitionIndex()))
+        item->entityQuality() = 3; // make a star appear on knife
 
     if (config->custom_name[0])
         strcpy_s(item->customName(), config->custom_name);
@@ -168,9 +172,6 @@ static void apply_config_on_attributable_item(Entity* item, const item_setting* 
 
     if (config->seed)
         item->fallbackSeed() = config->seed;
-
-    if (config->stat_trak)
-        item->fallbackStatTrak() = config->stat_trak;
 
     item->fallbackWear() = config->wear;
 
@@ -384,5 +385,23 @@ void SkinChanger::overrideHudIcon(GameEvent& event) noexcept
     if (localPlayer && interfaces->engine->getPlayerForUserID(event.getInt("attacker")) == localPlayer->index()) {
         if (const auto iconOverride = iconOverrides[event.getString("weapon")])
             event.setString("weapon", iconOverride);
+    }
+}
+
+void SkinChanger::updateStatTrak(GameEvent& event) noexcept
+{
+    if (!localPlayer)
+        return;
+
+    if (const auto localUserId = localPlayer->getUserId(); event.getInt("attacker") != localUserId || event.getInt("userid") == localUserId)
+        return;
+
+    const auto weapon = localPlayer->getActiveWeapon();
+    if (!weapon)
+        return;
+
+    if (const auto conf = get_by_definition_index(is_knife(weapon->itemDefinitionIndex()) ? WEAPON_KNIFE : weapon->itemDefinitionIndex()); conf && conf->stat_trak > -1) {
+        weapon->fallbackStatTrak() = ++conf->stat_trak;
+        weapon->postDataUpdate(0);
     }
 }
